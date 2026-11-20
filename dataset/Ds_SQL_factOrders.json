@@ -1,0 +1,131 @@
+{
+	"name": "Ds_SQL_factOrders",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_AzureSQL_SHopEasy",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "Orderid",
+				"type": "varchar"
+			},
+			{
+				"name": "CustomerId",
+				"type": "varchar"
+			},
+			{
+				"name": "Productid",
+				"type": "varchar"
+			},
+			{
+				"name": "Customername",
+				"type": "nvarchar"
+			},
+			{
+				"name": "Productname",
+				"type": "nvarchar"
+			},
+			{
+				"name": "Category",
+				"type": "nvarchar"
+			},
+			{
+				"name": "Orderdate",
+				"type": "date"
+			},
+			{
+				"name": "Ordermonth",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "OrderYear",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "Quantity",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "Unitprice",
+				"type": "decimal",
+				"precision": 10,
+				"scale": 2
+			},
+			{
+				"name": "Discountpct",
+				"type": "decimal",
+				"precision": 10,
+				"scale": 2
+			},
+			{
+				"name": "DiscountAmount",
+				"type": "decimal",
+				"precision": 10,
+				"scale": 2
+			},
+			{
+				"name": "GrossRevenue",
+				"type": "decimal",
+				"precision": 10,
+				"scale": 2
+			},
+			{
+				"name": "Shippingcost",
+				"type": "decimal",
+				"precision": 10,
+				"scale": 2
+			},
+			{
+				"name": "NetRevenue",
+				"type": "decimal",
+				"precision": 10,
+				"scale": 2
+			},
+			{
+				"name": "CostofGoods",
+				"type": "decimal",
+				"precision": 10,
+				"scale": 2
+			},
+			{
+				"name": "GrossProfit",
+				"type": "decimal",
+				"precision": 10,
+				"scale": 2
+			},
+			{
+				"name": "Paymentmethod",
+				"type": "nvarchar"
+			},
+			{
+				"name": "Orderstatus",
+				"type": "nvarchar"
+			},
+			{
+				"name": "Isdelivered",
+				"type": "bit"
+			},
+			{
+				"name": "Region",
+				"type": "nvarchar"
+			},
+			{
+				"name": "LoadAt",
+				"type": "datetime",
+				"precision": 23,
+				"scale": 3
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "fact_Orders"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

@@ -1,0 +1,18 @@
+{
+	"name": "LS_AzureSQL_SHopEasy",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"description": "Clean data dastination",
+		"annotations": [],
+		"type": "AzureSqlDatabase",
+		"typeProperties": {
+			"server": "sql-shopeasy.database.windows.net",
+			"database": "shopeasy-dw",
+			"encrypt": "mandatory",
+			"trustServerCertificate": true,
+			"authenticationType": "SQL",
+			"userName": "sqladmin",
+			"encryptedCredential": "ew0KICAiVmVyc2lvbiI6ICIyMDE3LTExLTMwIiwNCiAgIlByb3RlY3Rpb25Nb2RlIjogIktleSIsDQogICJTZWNyZXRDb250ZW50VHlwZSI6ICJQbGFpbnRleHQiLA0KICAiQ3JlZGVudGlhbElkIjogIkRBVEFGQUNUT1JZQEMwMTVCMkVBLTA1NUItNDdFOS05MjFELThFMDVCNTYzMzI0NV9mNjFiMzIzZi1iZTI2LTQ5Y2ItYTM2Yy04ZDJmMDE3YjI5OTEiDQp9"
+		}
+	}
+}

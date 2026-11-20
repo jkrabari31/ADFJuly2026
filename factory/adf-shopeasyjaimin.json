@@ -1,0 +1,16 @@
+{
+	"name": "adf-shopeasyjaimin",
+	"properties": {
+		"trustModeClaimForMi": {
+			"value": "Disabled",
+			"editable": true,
+			"isExplicitlySet": false
+		}
+	},
+	"location": "centralindia",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "4046c394-0c62-4050-91c8-9c9401d6ab2b",
+		"tenantId": "e02ce224-99cd-4900-a799-af17c0298db9"
+	}
+}
