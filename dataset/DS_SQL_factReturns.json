@@ -1,0 +1,54 @@
+{
+	"name": "DS_SQL_factReturns",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_AzureSQL_SHopEasy",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "returnid",
+				"type": "varchar"
+			},
+			{
+				"name": "orderid",
+				"type": "varchar"
+			},
+			{
+				"name": "customerid",
+				"type": "varchar"
+			},
+			{
+				"name": "return_date",
+				"type": "date"
+			},
+			{
+				"name": "return_reason",
+				"type": "nvarchar"
+			},
+			{
+				"name": "return_status",
+				"type": "nvarchar"
+			},
+			{
+				"name": "refund_amount",
+				"type": "decimal",
+				"precision": 10,
+				"scale": 2
+			},
+			{
+				"name": "load_at",
+				"type": "datetime",
+				"precision": 23,
+				"scale": 3
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "FACT_returnss"
+		}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}
