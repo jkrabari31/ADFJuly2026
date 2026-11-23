@@ -1,0 +1,1753 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "adf-shopeasyjaimin"
+		},
+		"LS_AzureSQL_SHopEasy_password": {
+			"type": "secureString",
+			"metadata": "Secure string for 'password' of 'LS_AzureSQL_SHopEasy'"
+		},
+		"LS_BlobStorage_ShopEasy_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'LS_BlobStorage_ShopEasy'"
+		},
+		"LS_AzureSQL_SHopEasy_properties_typeProperties_server": {
+			"type": "string",
+			"defaultValue": "sql-shopeasy.database.windows.net"
+		},
+		"LS_AzureSQL_SHopEasy_properties_typeProperties_database": {
+			"type": "string",
+			"defaultValue": "shopeasy-dw"
+		},
+		"LS_AzureSQL_SHopEasy_properties_typeProperties_userName": {
+			"type": "string",
+			"defaultValue": "sqladmin"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/PL_Load_Dimensions')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "This is for the dimension data load pipeline.",
+				"activities": [
+					{
+						"name": "Copy_Cutomers",
+						"description": "Copy customer form blob to SQL",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.00:30:00",
+							"retry": 2,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "DelimitedTextSource",
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							},
+							"sink": {
+								"type": "AzureSqlSink",
+								"preCopyScript": "Truncate table dbo.dim_customers",
+								"writeBehavior": "upsert",
+								"upsertSettings": {
+									"useTempDB": true,
+									"keys": [
+										"Customerid"
+									]
+								},
+								"sqlWriterUseTableLock": false,
+								"disableMetricsCollection": false
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"mappings": [
+									{
+										"source": {
+											"name": "CustomerId",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "Customerid",
+											"type": "String",
+											"physicalType": "varchar"
+										}
+									},
+									{
+										"source": {
+											"name": "FirstName",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "Fullname",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "Email",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "Email",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "City",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "City",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "State",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "State",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "Country",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "Country",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "CustomerSegment",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "Customersegment",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "JoinDate",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "Joindate",
+											"type": "Date",
+											"physicalType": "date"
+										}
+									}
+								],
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "DS_Blob_Customers",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "DS_SQL_dimCustomer",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					},
+					{
+						"name": "Copy_Products",
+						"description": "Load Products data from Blob to SQL",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "Copy_Cutomers",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.00:30:00",
+							"retry": 2,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "DelimitedTextSource",
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							},
+							"sink": {
+								"type": "AzureSqlSink",
+								"preCopyScript": "TRUNCATE TABLE dbo.dim_Products",
+								"writeBehavior": "upsert",
+								"upsertSettings": {
+									"useTempDB": true,
+									"keys": [
+										"productId"
+									]
+								},
+								"sqlWriterUseTableLock": false,
+								"disableMetricsCollection": false
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"mappings": [
+									{
+										"source": {
+											"name": "ProductId",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "productId",
+											"type": "String",
+											"physicalType": "varchar"
+										}
+									},
+									{
+										"source": {
+											"name": "ProductName",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "ProductName",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "Category",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "Category",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "SubCategory",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "Subcategory",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "Brand",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "Brand",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "UnitPrice",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "UnitPrice",
+											"type": "Decimal",
+											"physicalType": "decimal",
+											"scale": 2,
+											"precision": 10
+										}
+									},
+									{
+										"source": {
+											"name": "CostPrice",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "CostPrice",
+											"type": "Decimal",
+											"physicalType": "decimal",
+											"scale": 2,
+											"precision": 10
+										}
+									},
+									{
+										"source": {
+											"name": "Supplier",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "Supplier",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "IsActive",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "Isactive",
+											"type": "Boolean",
+											"physicalType": "bit"
+										}
+									}
+								],
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "DS_Blob_Products",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "DS_sql_dimProducts",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"annotations": [],
+				"lastPublishTime": "2026-11-19T09:45:17Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/DS_Blob_Customers')]",
+				"[concat(variables('factoryId'), '/datasets/DS_SQL_dimCustomer')]",
+				"[concat(variables('factoryId'), '/datasets/DS_Blob_Products')]",
+				"[concat(variables('factoryId'), '/datasets/DS_sql_dimProducts')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/PL_Tranform_Orders')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "Cleanse and Loads all orders and returns data",
+				"activities": [
+					{
+						"name": "DF_Activity_CleanseOrders",
+						"description": "Facts Orders load",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.00:30:00",
+							"retry": 1,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "DF_Cleanse_Orders",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"AllOrders": {},
+									"SinkOrders": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					},
+					{
+						"name": "LoadReturns",
+						"description": "Load Return data",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "DF_Activity_CleanseOrders",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.00:30:00",
+							"retry": 2,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "DelimitedTextSource",
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							},
+							"sink": {
+								"type": "AzureSqlSink",
+								"preCopyScript": "TRUNCATE TABLE dbo.FACT_returnss",
+								"writeBehavior": "upsert",
+								"upsertSettings": {
+									"useTempDB": true,
+									"keys": [
+										"returnid"
+									]
+								},
+								"sqlWriterUseTableLock": false,
+								"disableMetricsCollection": false
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"mappings": [
+									{
+										"source": {
+											"name": "ReturnId",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "returnid",
+											"type": "String",
+											"physicalType": "varchar"
+										}
+									},
+									{
+										"source": {
+											"name": "OrderId",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "orderid",
+											"type": "String",
+											"physicalType": "varchar"
+										}
+									},
+									{
+										"source": {
+											"name": "CustomerId",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "customerid",
+											"type": "String",
+											"physicalType": "varchar"
+										}
+									},
+									{
+										"source": {
+											"name": "ReturnDate",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "return_date",
+											"type": "Date",
+											"physicalType": "date"
+										}
+									},
+									{
+										"source": {
+											"name": "ReturnReason",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "return_reason",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "ReturnStatus",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "return_status",
+											"type": "String",
+											"physicalType": "nvarchar"
+										}
+									},
+									{
+										"source": {
+											"name": "RefundAmount",
+											"type": "String",
+											"physicalType": "String"
+										},
+										"sink": {
+											"name": "refund_amount",
+											"type": "Decimal",
+											"physicalType": "decimal",
+											"scale": 2,
+											"precision": 10
+										}
+									}
+								],
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "DS_Blob_Returns",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "DS_SQL_factReturns",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"annotations": [],
+				"lastPublishTime": "2026-11-20T08:54:57Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/dataflows/DF_Cleanse_Orders')]",
+				"[concat(variables('factoryId'), '/datasets/DS_Blob_Returns')]",
+				"[concat(variables('factoryId'), '/datasets/DS_SQL_factReturns')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_Blob_Customers')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_BlobStorage_ShopEasy",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "customers.csv",
+						"folderPath": "customers",
+						"container": "raw"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "CustomerId",
+						"type": "String"
+					},
+					{
+						"name": "FirstName",
+						"type": "String"
+					},
+					{
+						"name": "LastName",
+						"type": "String"
+					},
+					{
+						"name": "Email",
+						"type": "String"
+					},
+					{
+						"name": "Phone",
+						"type": "String"
+					},
+					{
+						"name": "City",
+						"type": "String"
+					},
+					{
+						"name": "State",
+						"type": "String"
+					},
+					{
+						"name": "Country",
+						"type": "String"
+					},
+					{
+						"name": "CustomerSegment",
+						"type": "String"
+					},
+					{
+						"name": "JoinDate",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_BlobStorage_ShopEasy')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_Blob_Orders')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_BlobStorage_ShopEasy",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"folderPath": "orders/year=2024",
+						"container": "raw"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "OrderId",
+						"type": "String"
+					},
+					{
+						"name": "CustomerId",
+						"type": "String"
+					},
+					{
+						"name": "ProductId",
+						"type": "String"
+					},
+					{
+						"name": "OrderDate",
+						"type": "String"
+					},
+					{
+						"name": "Quantity",
+						"type": "String"
+					},
+					{
+						"name": "UnitPrice",
+						"type": "String"
+					},
+					{
+						"name": "Discount",
+						"type": "String"
+					},
+					{
+						"name": "ShippingCost",
+						"type": "String"
+					},
+					{
+						"name": "PaymentMethod",
+						"type": "String"
+					},
+					{
+						"name": "OrderStatus",
+						"type": "String"
+					},
+					{
+						"name": "Region",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_BlobStorage_ShopEasy')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_Blob_Products')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_BlobStorage_ShopEasy",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "products.csv",
+						"folderPath": "Products",
+						"container": "raw"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "ProductId",
+						"type": "String"
+					},
+					{
+						"name": "ProductName",
+						"type": "String"
+					},
+					{
+						"name": "Category",
+						"type": "String"
+					},
+					{
+						"name": "SubCategory",
+						"type": "String"
+					},
+					{
+						"name": "Brand",
+						"type": "String"
+					},
+					{
+						"name": "UnitPrice",
+						"type": "String"
+					},
+					{
+						"name": "CostPrice",
+						"type": "String"
+					},
+					{
+						"name": "StockQty",
+						"type": "String"
+					},
+					{
+						"name": "Supplier",
+						"type": "String"
+					},
+					{
+						"name": "IsActive",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_BlobStorage_ShopEasy')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_Blob_Returns')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_BlobStorage_ShopEasy",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "returns.csv",
+						"folderPath": "returns",
+						"container": "raw"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "ReturnId",
+						"type": "String"
+					},
+					{
+						"name": "OrderId",
+						"type": "String"
+					},
+					{
+						"name": "CustomerId",
+						"type": "String"
+					},
+					{
+						"name": "ProductId",
+						"type": "String"
+					},
+					{
+						"name": "ReturnDate",
+						"type": "String"
+					},
+					{
+						"name": "ReturnReason",
+						"type": "String"
+					},
+					{
+						"name": "ReturnStatus",
+						"type": "String"
+					},
+					{
+						"name": "RefundAmount",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_BlobStorage_ShopEasy')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_SQL_dimCustomer')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_AzureSQL_SHopEasy",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
+					{
+						"name": "Customerid",
+						"type": "varchar"
+					},
+					{
+						"name": "Fullname",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Email",
+						"type": "nvarchar"
+					},
+					{
+						"name": "City",
+						"type": "nvarchar"
+					},
+					{
+						"name": "State",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Country",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Customersegment",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Joindate",
+						"type": "date"
+					},
+					{
+						"name": "Loadat",
+						"type": "datetime",
+						"precision": 23,
+						"scale": 3
+					}
+				],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "dim_Customers"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_AzureSQL_SHopEasy')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_SQL_factReturns')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_AzureSQL_SHopEasy",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
+					{
+						"name": "returnid",
+						"type": "varchar"
+					},
+					{
+						"name": "orderid",
+						"type": "varchar"
+					},
+					{
+						"name": "customerid",
+						"type": "varchar"
+					},
+					{
+						"name": "return_date",
+						"type": "date"
+					},
+					{
+						"name": "return_reason",
+						"type": "nvarchar"
+					},
+					{
+						"name": "return_status",
+						"type": "nvarchar"
+					},
+					{
+						"name": "refund_amount",
+						"type": "decimal",
+						"precision": 10,
+						"scale": 2
+					},
+					{
+						"name": "load_at",
+						"type": "datetime",
+						"precision": 23,
+						"scale": 3
+					}
+				],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "FACT_returnss"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_AzureSQL_SHopEasy')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DS_sql_dimProducts')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_AzureSQL_SHopEasy",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
+					{
+						"name": "productId",
+						"type": "varchar"
+					},
+					{
+						"name": "ProductName",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Category",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Subcategory",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Brand",
+						"type": "nvarchar"
+					},
+					{
+						"name": "UnitPrice",
+						"type": "decimal",
+						"precision": 10,
+						"scale": 2
+					},
+					{
+						"name": "CostPrice",
+						"type": "decimal",
+						"precision": 10,
+						"scale": 2
+					},
+					{
+						"name": "Supplier",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Isactive",
+						"type": "bit"
+					},
+					{
+						"name": "LoadAt",
+						"type": "datetime",
+						"precision": 23,
+						"scale": 3
+					}
+				],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "dim_Products"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_AzureSQL_SHopEasy')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Ds_SQL_factOrders')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "LS_AzureSQL_SHopEasy",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
+					{
+						"name": "Orderid",
+						"type": "varchar"
+					},
+					{
+						"name": "CustomerId",
+						"type": "varchar"
+					},
+					{
+						"name": "Productid",
+						"type": "varchar"
+					},
+					{
+						"name": "Customername",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Productname",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Category",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Orderdate",
+						"type": "date"
+					},
+					{
+						"name": "Ordermonth",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "OrderYear",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "Quantity",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "Unitprice",
+						"type": "decimal",
+						"precision": 10,
+						"scale": 2
+					},
+					{
+						"name": "Discountpct",
+						"type": "decimal",
+						"precision": 10,
+						"scale": 2
+					},
+					{
+						"name": "DiscountAmount",
+						"type": "decimal",
+						"precision": 10,
+						"scale": 2
+					},
+					{
+						"name": "GrossRevenue",
+						"type": "decimal",
+						"precision": 10,
+						"scale": 2
+					},
+					{
+						"name": "Shippingcost",
+						"type": "decimal",
+						"precision": 10,
+						"scale": 2
+					},
+					{
+						"name": "NetRevenue",
+						"type": "decimal",
+						"precision": 10,
+						"scale": 2
+					},
+					{
+						"name": "CostofGoods",
+						"type": "decimal",
+						"precision": 10,
+						"scale": 2
+					},
+					{
+						"name": "GrossProfit",
+						"type": "decimal",
+						"precision": 10,
+						"scale": 2
+					},
+					{
+						"name": "Paymentmethod",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Orderstatus",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Isdelivered",
+						"type": "bit"
+					},
+					{
+						"name": "Region",
+						"type": "nvarchar"
+					},
+					{
+						"name": "LoadAt",
+						"type": "datetime",
+						"precision": 23,
+						"scale": 3
+					}
+				],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "fact_Orders"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/LS_AzureSQL_SHopEasy')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/LS_AzureSQL_SHopEasy')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "Clean data dastination",
+				"annotations": [],
+				"type": "AzureSqlDatabase",
+				"typeProperties": {
+					"server": "[parameters('LS_AzureSQL_SHopEasy_properties_typeProperties_server')]",
+					"database": "[parameters('LS_AzureSQL_SHopEasy_properties_typeProperties_database')]",
+					"encrypt": "mandatory",
+					"trustServerCertificate": true,
+					"authenticationType": "SQL",
+					"userName": "[parameters('LS_AzureSQL_SHopEasy_properties_typeProperties_userName')]",
+					"password": {
+						"type": "SecureString",
+						"value": "[parameters('LS_AzureSQL_SHopEasy_password')]"
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/LS_BlobStorage_ShopEasy')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "Raw data CSV files for ShopEasy Project",
+				"annotations": [],
+				"type": "AzureBlobStorage",
+				"typeProperties": {
+					"connectionString": "[parameters('LS_BlobStorage_ShopEasy_connectionString')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DF_Cleanse_Orders')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "DS_Blob_Orders",
+								"type": "DatasetReference"
+							},
+							"name": "AllOrders"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "Ds_SQL_factOrders",
+								"type": "DatasetReference"
+							},
+							"name": "SinkOrders"
+						}
+					],
+					"transformations": [
+						{
+							"name": "ValidOrders"
+						},
+						{
+							"name": "derivedColumn"
+						},
+						{
+							"name": "cast1"
+						},
+						{
+							"name": "FinalOrders"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          OrderId as string,",
+						"          CustomerId as string,",
+						"          ProductId as string,",
+						"          OrderDate as string,",
+						"          Quantity as string,",
+						"          UnitPrice as string,",
+						"          Discount as string,",
+						"          ShippingCost as string,",
+						"          PaymentMethod as string,",
+						"          OrderStatus as string,",
+						"          Region as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false,",
+						"     wildcardPaths:['orders/year=2024/orders_*2024.csv']) ~> AllOrders",
+						"cast1 filter(!isNull(OrderId) && length(trim(OrderId)) > 0) ~> ValidOrders",
+						"ValidOrders derive(GrossRevenue = UnitPrice * Quantity,",
+						"          DiscountAmount = UnitPrice * Quantity* Discount,",
+						"          NetRevenue = Quantity * UnitPrice * (1-Discount),",
+						"          TotalRevenue = (Quantity * UnitPrice * (1-Discount) + ShippingCost),",
+						"          IsDelivered = equals(OrderStatus, 'Delivered'),",
+						"          OrderMonth = month(toDate(OrderDate, 'yyyy-MM-dd')),",
+						"          OrderYear = year(toDate(OrderDate,'yyyy-MM-dd')),",
+						"          OrderdatClean = toDate(OrderDate, 'yyyy-MM-dd')) ~> derivedColumn",
+						"AllOrders cast(output(",
+						"          Quantity as integer '000',",
+						"          UnitPrice as integer '000',",
+						"          Discount as double '###,###,000.00',",
+						"          ShippingCost as integer '000'",
+						"     ),",
+						"     errors: true) ~> cast1",
+						"derivedColumn select(mapColumn(",
+						"          OrderId,",
+						"          CustomerId,",
+						"          ProductId,",
+						"          OrderDateold = OrderDate,",
+						"          Quantity,",
+						"          UnitPrice,",
+						"          DiscountPct = Discount,",
+						"          ShippingCost,",
+						"          PaymentMethod,",
+						"          OrderStatus,",
+						"          Region,",
+						"          GrossRevenue,",
+						"          DiscountAmount,",
+						"          NetRevenue,",
+						"          TotalRevenue,",
+						"          IsDelivered,",
+						"          OrderMonth,",
+						"          OrderYear,",
+						"          Orderdate = OrderdatClean",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> FinalOrders",
+						"FinalOrders sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          Orderid as string,",
+						"          CustomerId as string,",
+						"          Productid as string,",
+						"          Customername as string,",
+						"          Productname as string,",
+						"          Category as string,",
+						"          Orderdate as date,",
+						"          Ordermonth as integer,",
+						"          OrderYear as integer,",
+						"          Quantity as integer,",
+						"          Unitprice as decimal(10,2),",
+						"          Discountpct as decimal(10,2),",
+						"          DiscountAmount as decimal(10,2),",
+						"          GrossRevenue as decimal(10,2),",
+						"          Shippingcost as decimal(10,2),",
+						"          NetRevenue as decimal(10,2),",
+						"          CostofGoods as decimal(10,2),",
+						"          GrossProfit as decimal(10,2),",
+						"          Paymentmethod as string,",
+						"          Orderstatus as string,",
+						"          Isdelivered as boolean,",
+						"          Region as string,",
+						"          LoadAt as timestamp",
+						"     ),",
+						"     deletable:false,",
+						"     insertable:true,",
+						"     updateable:false,",
+						"     upsertable:false,",
+						"     truncate:true,",
+						"     format: 'table',",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError',",
+						"     mapColumn(",
+						"          Orderid = OrderId,",
+						"          CustomerId,",
+						"          Productid = ProductId,",
+						"          Orderdate,",
+						"          Ordermonth = OrderMonth,",
+						"          OrderYear,",
+						"          Quantity,",
+						"          Unitprice = UnitPrice,",
+						"          Discountpct = DiscountPct,",
+						"          DiscountAmount,",
+						"          GrossRevenue,",
+						"          Shippingcost = ShippingCost,",
+						"          NetRevenue,",
+						"          Paymentmethod = PaymentMethod,",
+						"          Orderstatus = OrderStatus,",
+						"          Isdelivered = IsDelivered,",
+						"          Region",
+						"     )) ~> SinkOrders"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/DS_Blob_Orders')]",
+				"[concat(variables('factoryId'), '/datasets/Ds_SQL_factOrders')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DF_Enrich_Orders')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"description": "Enrich Orders.",
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "Ds_SQL_factOrders",
+								"type": "DatasetReference"
+							},
+							"name": "RawSource"
+						},
+						{
+							"dataset": {
+								"referenceName": "DS_SQL_dimCustomer",
+								"type": "DatasetReference"
+							},
+							"name": "Customers"
+						},
+						{
+							"dataset": {
+								"referenceName": "DS_sql_dimProducts",
+								"type": "DatasetReference"
+							},
+							"name": "Product"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "Ds_SQL_factOrders",
+								"type": "DatasetReference"
+							},
+							"name": "FInalDestination"
+						}
+					],
+					"transformations": [
+						{
+							"name": "OrdersWithCUstomers"
+						},
+						{
+							"name": "OrderEnrich"
+						},
+						{
+							"name": "WIthProfit"
+						},
+						{
+							"name": "FinalEnriached"
+						},
+						{
+							"name": "AlterRow1"
+						}
+					],
+					"scriptLines": [
+						"source(output(",
+						"          Orderid as string,",
+						"          CustomerId as string,",
+						"          Productid as string,",
+						"          Customername as string,",
+						"          Productname as string,",
+						"          Category as string,",
+						"          Orderdate as date,",
+						"          Ordermonth as integer,",
+						"          OrderYear as integer,",
+						"          Quantity as integer,",
+						"          Unitprice as decimal(10,2),",
+						"          Discountpct as decimal(10,2),",
+						"          DiscountAmount as decimal(10,2),",
+						"          GrossRevenue as decimal(10,2),",
+						"          Shippingcost as decimal(10,2),",
+						"          NetRevenue as decimal(10,2),",
+						"          CostofGoods as decimal(10,2),",
+						"          GrossProfit as decimal(10,2),",
+						"          Paymentmethod as string,",
+						"          Orderstatus as string,",
+						"          Isdelivered as boolean,",
+						"          Region as string,",
+						"          LoadAt as timestamp",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> RawSource",
+						"source(output(",
+						"          Customerid as string,",
+						"          Fullname as string,",
+						"          Email as string,",
+						"          City as string,",
+						"          State as string,",
+						"          Country as string,",
+						"          Customersegment as string,",
+						"          Joindate as date,",
+						"          Loadat as timestamp",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> Customers",
+						"source(output(",
+						"          productId as string,",
+						"          ProductName as string,",
+						"          Category as string,",
+						"          Subcategory as string,",
+						"          Brand as string,",
+						"          UnitPrice as decimal(10,2),",
+						"          CostPrice as decimal(10,2),",
+						"          Supplier as string,",
+						"          Isactive as boolean,",
+						"          LoadAt as timestamp",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     isolationLevel: 'READ_UNCOMMITTED',",
+						"     format: 'table') ~> Product",
+						"RawSource, Customers join(RawSource@CustomerId == Customers@Customerid,",
+						"     joinType:'left',",
+						"     matchType:'exact',",
+						"     ignoreSpaces: false,",
+						"     broadcast: 'auto')~> OrdersWithCUstomers",
+						"OrdersWithCUstomers, Product join(RawSource@Productid == Product@productId,",
+						"     joinType:'left',",
+						"     matchType:'exact',",
+						"     ignoreSpaces: false,",
+						"     broadcast: 'auto')~> OrderEnrich",
+						"OrderEnrich derive(CostOfGoods = Quantity * CostPrice,",
+						"          GrossProfit = NetRevenue - (Quantity * CostPrice),",
+						"          ProfitMarginPct = (NetRevenue - Quantity * CostPrice) / \r",
+						"iif(NetRevenue == toDecimal(0), toDecimal(1), NetRevenue) * toDecimal(100)) ~> WIthProfit",
+						"WIthProfit select(mapColumn(",
+						"          Orderid,",
+						"          Customername,",
+						"          Productname = RawSource@Productname,",
+						"          Category = RawSource@Category,",
+						"          Orderdate,",
+						"          Ordermonth,",
+						"          OrderYear,",
+						"          Quantity,",
+						"          Unitprice = RawSource@Unitprice,",
+						"          Discountpct,",
+						"          DiscountAmount,",
+						"          GrossRevenue,",
+						"          Shippingcost,",
+						"          NetRevenue,",
+						"          CostofGoods = RawSource@CostofGoods,",
+						"          GrossProfit,",
+						"          Paymentmethod,",
+						"          Orderstatus,",
+						"          Isdelivered,",
+						"          Region,",
+						"          Customerid = Customers@Customerid,",
+						"          Fullname,",
+						"          Email,",
+						"          City,",
+						"          State,",
+						"          Country,",
+						"          Customersegment,",
+						"          Joindate,",
+						"          productId = Product@productId,",
+						"          ProductName = Product@ProductName,",
+						"          Category = Product@Category,",
+						"          Subcategory,",
+						"          Brand,",
+						"          UnitPrice = Product@UnitPrice,",
+						"          CostPrice,",
+						"          Supplier,",
+						"          Isactive,",
+						"          CostOfGoods = WIthProfit@CostOfGoods,",
+						"          ProfitMarginPct,",
+						"          FullName = Fullname,",
+						"          Categoryname = Product@Category",
+						"     ),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> FinalEnriached",
+						"FinalEnriached alterRow(updateIf(true()),",
+						"     upsertIf(true())) ~> AlterRow1",
+						"AlterRow1 sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     input(",
+						"          Orderid as string,",
+						"          CustomerId as string,",
+						"          Productid as string,",
+						"          Customername as string,",
+						"          Productname as string,",
+						"          Category as string,",
+						"          Orderdate as date,",
+						"          Ordermonth as integer,",
+						"          OrderYear as integer,",
+						"          Quantity as integer,",
+						"          Unitprice as decimal(10,2),",
+						"          Discountpct as decimal(10,2),",
+						"          DiscountAmount as decimal(10,2),",
+						"          GrossRevenue as decimal(10,2),",
+						"          Shippingcost as decimal(10,2),",
+						"          NetRevenue as decimal(10,2),",
+						"          CostofGoods as decimal(10,2),",
+						"          GrossProfit as decimal(10,2),",
+						"          Paymentmethod as string,",
+						"          Orderstatus as string,",
+						"          Isdelivered as boolean,",
+						"          Region as string,",
+						"          LoadAt as timestamp",
+						"     ),",
+						"     deletable:false,",
+						"     insertable:true,",
+						"     updateable:true,",
+						"     upsertable:true,",
+						"     keys:['Orderid'],",
+						"     format: 'table',",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     errorHandlingOption: 'stopOnFirstError',",
+						"     mapColumn(",
+						"          Orderid,",
+						"          CostofGoods = FinalEnriached@CostOfGoods,",
+						"          CustomerId = Customerid,",
+						"          Productid = productId,",
+						"          Customername = Fullname,",
+						"          Category = Categoryname,",
+						"          Orderdate,",
+						"          Ordermonth,",
+						"          OrderYear,",
+						"          Quantity,",
+						"          Discountpct,",
+						"          DiscountAmount,",
+						"          GrossRevenue,",
+						"          Shippingcost,",
+						"          NetRevenue,",
+						"          GrossProfit,",
+						"          Paymentmethod,",
+						"          Orderstatus,",
+						"          Isdelivered,",
+						"          Region",
+						"     )) ~> FInalDestination"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/Ds_SQL_factOrders')]",
+				"[concat(variables('factoryId'), '/datasets/DS_SQL_dimCustomer')]",
+				"[concat(variables('factoryId'), '/datasets/DS_sql_dimProducts')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/MasterPipwline')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Load_Dimension",
+						"type": "ExecutePipeline",
+						"dependsOn": [],
+						"policy": {
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "PL_Load_Dimensions",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {}
+						}
+					},
+					{
+						"name": "Transform_Order",
+						"type": "ExecutePipeline",
+						"dependsOn": [
+							{
+								"activity": "Load_Dimension",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"pipeline": {
+								"referenceName": "PL_Tranform_Orders",
+								"type": "PipelineReference"
+							},
+							"waitOnCompletion": true,
+							"parameters": {}
+						}
+					},
+					{
+						"name": "Enriched_Orders",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [
+							{
+								"activity": "Transform_Order",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "DF_Enrich_Orders",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"RawSource": {},
+									"Customers": {},
+									"Product": {},
+									"FInalDestination": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"parameters": {
+					"Run": {
+						"type": "string",
+						"defaultValue": "Full"
+					}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/pipelines/PL_Load_Dimensions')]",
+				"[concat(variables('factoryId'), '/pipelines/PL_Tranform_Orders')]",
+				"[concat(variables('factoryId'), '/dataflows/DF_Enrich_Orders')]"
+			]
+		}
+	]
+}
