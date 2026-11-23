@@ -48,6 +48,9 @@
 				},
 				{
 					"name": "FinalEnriached"
+				},
+				{
+					"name": "AlterRow1"
 				}
 			],
 			"scriptLines": [
@@ -170,7 +173,9 @@
 				"     ),",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true) ~> FinalEnriached",
-				"FinalEnriached sink(allowSchemaDrift: true,",
+				"FinalEnriached alterRow(updateIf(true()),",
+				"     upsertIf(true())) ~> AlterRow1",
+				"AlterRow1 sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     input(",
 				"          Orderid as string,",
@@ -199,9 +204,9 @@
 				"     ),",
 				"     deletable:false,",
 				"     insertable:true,",
-				"     updateable:false,",
-				"     upsertable:false,",
-				"     truncate:true,",
+				"     updateable:true,",
+				"     upsertable:true,",
+				"     keys:['Orderid'],",
 				"     format: 'table',",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true,",
