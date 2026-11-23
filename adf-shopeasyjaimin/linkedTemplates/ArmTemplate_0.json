@@ -1425,7 +1425,8 @@
 						"          Paymentmethod,",
 						"          Orderstatus,",
 						"          Isdelivered,",
-						"          Region",
+						"          Region,",
+						"          Productname = FinalEnriached@Productname",
 						"     )) ~> FInalDestination"
 					]
 				}
